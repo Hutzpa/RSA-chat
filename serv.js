@@ -3,15 +3,17 @@ const express = require('express');
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 const NodeRsa = require('node-rsa');
-
 const Key = new NodeRsa({b:2048});
+
+const Encryptor = require('./src/Encryptor.js');
+
 
 app.use("/static",express.static("./static/"));
 app.get('/',(req,res) => res.sendFile(__dirname + '/static/client.html'));
 http.listen(3000,() => console.log('Listening 3000')) ;
 
-let privateServerKey = Key.exportKey('private');
-let publicServerKey = Key.exportKey('public');
+const privateServerKey = Key.exportKey('private');
+const publicServerKey = Key.exportKey('public');
 
 let users = [];
 
@@ -28,14 +30,9 @@ io.on('connection', socket =>{
     });
 
     socket.on('chat mes', Message =>{
-      
-        let decrypte = new NodeRsa(privateServerKey);
-        let decMes = decrypte.decrypt(Message.msg,'utf8');
-
-
+        let decMes = Encryptor.decrypt(Message.msg,privateServerKey);
         users.forEach(item => {
-            let encrypte = new NodeRsa(item.publicKey);         
-            socket.broadcast.to(item.id).emit('chat message',{name:Message.name, msg: encrypte.encrypt(decMes,'base64') });
+            socket.broadcast.to(item.id).emit('chat message',{name:Message.name, msg: Encryptor.encrypt(decMes,item.publicKey) });
         });        
     });
 

@@ -16,7 +16,7 @@
     "browserify": "^16.5.0"
   },
   "scripts": {
-    "build": "browserify static/app.js -o static/bundle.js"
+    "build": "browserify src/app.js -o static/bundle.js"
   },
   "keywords": [],
   "author": "",

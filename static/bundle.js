@@ -38947,25 +38947,44 @@ exports.createContext = Script.createContext = function (context) {
 };
 
 },{}],184:[function(require,module,exports){
+const NodeRsa = require('node-rsa');
+
+function encrypt(string, key) {
+    const _encrypt = new NodeRsa(key);
+    return _encrypt.encrypt(string,'base64');
+}
+
+function decrypt(string,key){
+    let decrypte = new NodeRsa(key);
+    return decrypte.decrypt(string,'utf8');
+}
+
+
+module.exports.encrypt = encrypt;
+module.exports.decrypt = decrypt;
+},{"node-rsa":118}],185:[function(require,module,exports){
 
      var $ = require('jquery');
      const NodeRsa = require('node-rsa');
      const Key = new NodeRsa({b:2048});
      var socket = io();
      let serverKey;     
+
+     const Encryptor = require('./Encryptor');
+
      
-     let publicClientKey = Key.exportKey('public');
-    //  console.log(publicClientKey);
-     let privateClientKey = Key.exportKey('private');
-    //  console.log(privateClientKey);
+     const publicClientKey = Key.exportKey('public');
+     const privateClientKey = Key.exportKey('private');
+
 
      socket.emit('greetingToServ',{publicKey:publicClientKey }); //обмен ключами с клиентом
      socket.on('greetingToClient', key =>{ serverKey = key; console.log("Public server key"); console.log(serverKey)});
+
+     
      
      $('form').submit(e => {
          e.preventDefault();
-         let encryptor = new NodeRsa(serverKey);
-         socket.emit('chat mes', {name: $('#name').val(), msg: encryptor.encrypt($('#message').val(),'base64')}); //Отправка сообщений на сервер
+         socket.emit('chat mes', {name: $('#name').val(), msg: Encryptor.encrypt($('#message').val(),serverKey)}); //Отправка сообщений на сервер
          $('#all_mess').append(`<div class='alert'> <b> ${$('#name').val()} </b> : ${$('#message').val()} </div>`)
          $('#message').val('');
          return false;
@@ -38973,10 +38992,7 @@ exports.createContext = Script.createContext = function (context) {
 
 
      socket.on('chat message', Message => {
-
-        let decryptor = new NodeRsa(privateClientKey);
-
-          $('#all_mess').append(`<div class='alert'> <b>${Message.name} </b> : ${decryptor.decrypt(Message.msg,'utf8')} </div>`);
+          $('#all_mess').append(`<div class='alert'> <b>${Message.name} </b> : ${Encryptor.decrypt(Message.msg,privateClientKey)} </div>`);
         });
 
-},{"jquery":113,"node-rsa":118}]},{},[184]);
+},{"./Encryptor":184,"jquery":113,"node-rsa":118}]},{},[185]);
